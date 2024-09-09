@@ -1,10 +1,12 @@
 import decipher
 import gleam/dynamic.{type DecodeError, type Dynamic, DecodeError}
+import gleam/function
 import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{Some}
-import gleam/regex
+import gleam/queue.{type Queue}
+import gleam/regex.{type Match}
 import gleam/result
 import gleam/string
 import gleeunit
@@ -32,45 +34,127 @@ pub fn decode_weight_unit_test() {
 }
 
 pub fn tokenize_test() {
-  "100.25lb 3x20; 80lbs 10x8 38.5kilogram 2x10, 1x8 1x6"
-  |> tokenize
-  |> should.equal([
-    WeightT("100.25lb", 100.25, "lb"),
-    SetsT("3x20", 3, 20),
-    WeightT("80lbs", 80.0, "lb"),
-    SetsT("10x8", 10, 8),
-    WeightT("38.5kilogram", 38.5, "kg"),
-    SetsT("2x10", 2, 10),
-    SetsT("1x8", 1, 8),
-    SetsT("1x6", 1, 6),
-  ])
+  let tokens =
+    "Lat pulldown 100.25lb 3x20; 80lbs 10x8 38.5kilogram 2x10 kind of cheaty, 1x8 1x6 --- not feeling in lats"
+    |> tokenize
+    |> function.tap(should.equal(_, [
+      UnknownT("Lat"),
+      UnknownT("pulldown"),
+      // ---
+      WeightT("100.25lb", 100.25, "lb"),
+      SetsT("3x20", 3, 20),
+      // ---
+      WeightT("80lbs", 80.0, "lb"),
+      SetsT("10x8", 10, 8),
+      // ---
+      WeightT("38.5kilogram", 38.5, "kg"),
+      SetsT("2x10", 2, 10),
+      UnknownT("kind"),
+      UnknownT("of"),
+      UnknownT("cheaty,"),
+      SetsT("1x8", 1, 8),
+      SetsT("1x6", 1, 6),
+      // ---
+      DelimiterT,
+      // ---
+      UnknownT("not"),
+      UnknownT("feeling"),
+      UnknownT("in"),
+      UnknownT("lats"),
+    ]))
+    |> list.fold(queue.new(), fn(acc: Queue(List(Token)), token: Token) -> Queue(
+      List(Token),
+    ) {
+      case queue.pop_back(acc) {
+        // I believe this is our "empty queue" starting state.
+        Error(_) -> queue.from_list([[token]])
+
+        Ok(#(popped_list, acc_)) -> {
+          // Will never push [] into the queue, so this is safe.
+          let assert Ok(back_token) = list.last(popped_list)
+
+          case back_token, token {
+            _, WeightT(..) -> [popped_list, [token]]
+
+            _, DelimiterT -> [popped_list, [token]]
+            DelimiterT, _ -> [[token]]
+
+            _, _ -> [list.reverse([token, ..list.reverse(popped_list)])]
+          }
+          |> list.fold(from: acc_, with: queue.push_back)
+        }
+      }
+    })
+    // Throwing `queue.to_list` in here because it's WAY easier to assert
+    // against; i.e. queue "literals" don't really seem to be so much of a thing
+    |> queue.to_list
+    |> should.equal([
+      [
+        UnknownT(
+          "FIXME: Probably should ierate from here.
+
+          Left this invalid Token in here instead of just a comment because
+          it's nice to have a failing test to come back to pointing you towards
+          what needs doing.",
+        ),
+      ],
+      [UnknownT("Lat"), UnknownT("pulldown")],
+      [WeightT("100.25lb", 100.25, "lb"), SetsT("3x20", 3, 20)],
+      [WeightT("80lbs", 80.0, "lb"), SetsT("10x8", 10, 8)],
+      [
+        WeightT("38.5kilogram", 38.5, "kg"),
+        SetsT("2x10", 2, 10),
+        UnknownT("kind"),
+        UnknownT("of"),
+        UnknownT("cheaty,"),
+        SetsT("1x8", 1, 8),
+        SetsT("1x6", 1, 6),
+      ],
+      [UnknownT("not"), UnknownT("feeling"), UnknownT("in"), UnknownT("lats")],
+    ])
 }
 
-type Token {
+pub type Token {
   WeightT(raw: String, value: Float, unit: String)
   SetsT(raw: String, sets: Int, reps: Int)
+  // Don't particularly care what the delimiter actually WAS, just that it's there.
+  DelimiterT
   UnknownT(raw: String)
 }
 
 fn decode_token(d: Dynamic) -> Result(Token, List(DecodeError)) {
   d
-  |> dynamic.any([decode_weight, decode_sets, decode_unknown])
+  |> dynamic.any([decode_weight, decode_sets, decode_delimiter, decode_unknown])
+}
+
+// The `_strict` suffix here denotes the fact that the `with` function MUST
+// produce an `a` (i.e. the provided regex implies totality of its captures).
+fn decode_single_regex_match_strict(
+  d: Dynamic,
+  matching pattern: String,
+  with f: fn(Match) -> a,
+) -> Result(a, List(DecodeError)) {
+  let assert Ok(re) = regex.from_string(pattern)
+  // Could use `use` here, but I'd rather know immediately if this is being
+  // called on something that's not a string…
+  //
+  // Actually now that I think about it, I don't see a reason why
+  // `dynamic.string` would ever fail? My reasoning here is that presumably
+  // anything could be decoded as a string… This is worth looking into.
+  let assert Ok(str) = dynamic.string(d)
+
+  case regex.scan(str, with: re) {
+    [match] -> Ok(f(match))
+    [] -> Error([DecodeError("single match", "no match", [pattern])])
+    _ -> Error([DecodeError("single match", "plural matches", [pattern])])
+  }
 }
 
 fn decode_weight(d: Dynamic) -> Result(Token, List(DecodeError)) {
-  let assert Ok(re) =
-    regex.from_string(
-      "((\\d+(\\.\\d+)?)(lbs|lb|pounds|pound|kgs|kg|kilograms|kilogram|kilos|kilo))",
-    )
-  // Could use `use` here, but I'd rather know immediately if this is being
-  // called on something that's not a string… Actually now that I think about
-  // it, I don't see a reason why `dynamic.string` would ever fail? My
-  // reasoning here is that presumably anything could be decoded as a string.
-  let assert Ok(word) = dynamic.string(d)
-
-  case regex.scan(word, with: re) {
-    [] -> Error([DecodeError("FIXME", "FIXME", ["FIXME"])])
-    [match] -> {
+  d
+  |> decode_single_regex_match_strict(
+    matching: "((\\d+(\\.\\d+)?)(lbs|lb|pounds|pound|kgs|kg|kilograms|kilogram|kilos|kilo))",
+    with: fn(match) {
       let assert [_, Some(value_str), _, Some(unit_str)] = match.submatches
       let assert Ok(value) =
         value_str
@@ -81,32 +165,39 @@ fn decode_weight(d: Dynamic) -> Result(Token, List(DecodeError)) {
         |> dynamic.from
         |> playground.decode_weight_unit
 
-      Ok(WeightT(raw: match.content, value:, unit:))
-    }
-    _ -> panic
-    // This could probably also just be a different `Error`
-  }
+      WeightT(raw: match.content, value:, unit:)
+    },
+  )
 }
 
 fn decode_sets(d: Dynamic) -> Result(Token, List(DecodeError)) {
-  let assert Ok(re) = regex.from_string("(\\d+)x(\\d+)")
-  // Could use `use` here, but I'd rather know immediately if this is being
-  // called on something that's not a string… Actually now that I think about
-  // it, I don't see a reason why `dynamic.string` would ever fail? My
-  // reasoning here is that presumably anything could be decoded as a string.
-  let assert Ok(word) = dynamic.string(d)
-
-  case regex.scan(word, with: re) {
-    [] -> Error([DecodeError("FIXME", "FIXME", ["FIXME"])])
-    [match] -> {
+  d
+  |> decode_single_regex_match_strict(
+    matching: "(\\d+)x(\\d+)",
+    with: fn(match: Match) {
       let assert [Some(sets_str), Some(reps_str)] = match.submatches
       let assert Ok(sets) = int.parse(sets_str)
       let assert Ok(reps) = int.parse(reps_str)
 
-      Ok(SetsT(raw: match.content, sets:, reps:))
-    }
-    _ -> panic
-    // This could probably also just be a different `Error`
+      SetsT(raw: match.content, sets:, reps:)
+    },
+  )
+}
+
+fn decode_delimiter(d: Dynamic) -> Result(Token, List(DecodeError)) {
+  let pattern = "#+|[-=]{2,}"
+  let assert Ok(re) = regex.from_string(pattern)
+  // Could use `use` here, but I'd rather know immediately if this is being
+  // called on something that's not a string…
+  //
+  // Actually now that I think about it, I don't see a reason why
+  // `dynamic.string` would ever fail? My reasoning here is that presumably
+  // anything could be decoded as a string… This is worth looking into.
+  let assert Ok(str) = dynamic.string(d)
+
+  case regex.check(with: re, content: str) {
+    True -> Ok(DelimiterT)
+    False -> Error([DecodeError("regex match", "no match", [pattern])])
   }
 }
 
