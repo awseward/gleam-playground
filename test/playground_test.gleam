@@ -18,6 +18,32 @@ pub fn main() {
   gleeunit.main()
 }
 
+pub type Foo {
+  A
+  B
+  C
+  Delim
+}
+
+fn is_delim(x: Foo) {
+  case x {
+    Delim -> True
+    _ -> False
+  }
+}
+
+pub fn chunk_test() {
+  [A, B, A, A, C, Delim, A, Delim, Delim, B, B, C, Delim, A, C, A, B]
+  |> list.chunk(is_delim)
+  |> list.filter(fn(xs) { [Delim] != list.unique(xs) })
+  |> function.tap(should.equal(_, [
+    [A, B, A, A, C],
+    [A],
+    [B, B, C],
+    [A, C, A, B],
+  ]))
+}
+
 pub fn decode_weight_unit_test() {
   [
     "lb", "lbs", "pound", "pounds", "kg", "kgs", "kilo", "kilos", "kilogram",
