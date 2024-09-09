@@ -1,5 +1,7 @@
 # playground
 
+[![test](https://github.com/awseward/gleam-playground/actions/workflows/test.yml/badge.svg)](https://github.com/awseward/gleam-playground/actions/workflows/test.yml)
+
 ## Development
 
 ```sh
