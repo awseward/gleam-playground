@@ -156,7 +156,7 @@ pub fn tokenize_test() {
     |> should.equal([
       [
         UnknownT(
-          "FIXME: Probably should ierate from here.
+          "FIXME: Probably should iterate from here.
 
           Left this invalid Token in here instead of just a comment because
           it's nice to have a failing test to come back to pointing you towards

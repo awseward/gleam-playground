@@ -3,8 +3,9 @@
 set -euo pipefail
 
 watch_test() {
-  # shellcheck disable=SC2012 # (TODO)
-  while sleep 0.1; do ls src/*.gleam test/*.gleam | entr -d gleam test; done
+  while sleep 1; do
+    find src test -name '*.gleam' | entr -d ding gleam test
+  done
 }
 
 "$@"
