@@ -8,6 +8,7 @@ packages = [
   { name = "gleam_stdlib", version = "0.40.0", build_tools = ["gleam"], requirements = [], otp_app = "gleam_stdlib", source = "hex", outer_checksum = "86606B75A600BBD05E539EB59FABC6E307EEEA7B1E5865AFB6D980A93BCB2181" },
   { name = "gleeunit", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "F7A7228925D3EE7D0813C922E062BFD6D7E9310F0BEE585D3A42F3307E3CFD13" },
   { name = "ranger", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "ranger", source = "hex", outer_checksum = "1566C272B1D141B3BBA38B25CB761EF56E312E79EC0E2DFD4D3C19FB0CC1F98C" },
+  { name = "stdin", version = "1.1.4", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "stdin", source = "hex", outer_checksum = "04C04035F2A4CEEFB023837249649CD25F9A9CF5A45F9947C4D0462428A4677D" },
   { name = "stoiridh_version", version = "0.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "stoiridh_version", source = "hex", outer_checksum = "EEF8ADAB9755BD33EB202F169376F1A7797AEF90823FDCA671D8590D04FBF56B" },
   { name = "thoas", version = "1.2.1", build_tools = ["rebar3"], requirements = [], otp_app = "thoas", source = "hex", outer_checksum = "E38697EDFFD6E91BD12CEA41B155115282630075C2A727E7A6B2947F5408B86A" },
 ]
@@ -16,3 +17,4 @@ packages = [
 decipher = { version = ">= 1.2.0 and < 2.0.0" }
 gleam_stdlib = { version = ">= 0.34.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
+stdin = { version = ">= 1.1.4 and < 2.0.0" }

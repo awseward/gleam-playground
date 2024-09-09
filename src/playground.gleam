@@ -1,10 +1,12 @@
 import decipher
 import gleam/dynamic.{type DecodeError, type Dynamic}
 import gleam/io
+import gleam/iterator
 import gleam/list
+import stdin.{stdin}
 
 pub fn main() {
-  io.println("Hello from playground!")
+  stdin() |> iterator.each(io.println(_))
 }
 
 pub fn decode_weight_unit(d: Dynamic) -> Result(String, List(DecodeError)) {
