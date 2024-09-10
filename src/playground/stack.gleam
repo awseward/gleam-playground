@@ -1,57 +1,46 @@
-import gleam/queue.{type Queue}
+import gleam/list
 import gleam/result
 
-/// A basic stack…
-///
-/// Uses the standard library's
-/// [Queue](https://hexdocs.pm/gleam_stdlib/gleam/queue.html) as its backing
-/// store.
+/// A pretty basic stack, it almost feels trivial enough to just do most of
+/// this with basic list destructuring to not even need a module like this at
+/// all… Almost.
 ///
 pub opaque type Stack(element) {
-  Stack(queue: Queue(element))
+  Stack(list: List(element))
 }
 
 pub fn new() -> Stack(a) {
-  Stack(queue.new())
+  Stack(list: [])
 }
 
 pub fn from_list(list: List(a)) -> Stack(a) {
-  list
-  |> queue.from_list
-  |> queue.reverse
-  |> Stack
+  Stack(list:)
 }
 
 pub fn to_list(stack: Stack(a)) -> List(a) {
-  stack.queue
-  |> queue.reverse
-  |> queue.to_list
+  stack.list
 }
 
 pub fn is_empty(stack: Stack(a)) -> Bool {
-  queue.is_empty(stack.queue)
+  list.is_empty(stack.list)
 }
 
-// -- From here on is where the API diverges from that of Queue
-
 pub fn size(stack: Stack(a)) -> Int {
-  queue.length(stack.queue)
+  list.length(stack.list)
 }
 
 pub fn push(onto stack: Stack(a), this item: a) -> Stack(a) {
-  item
-  |> queue.push_back(onto: stack.queue)
-  |> Stack
+  Stack([item, ..stack.list])
 }
 
 pub fn pop(from stack: Stack(a)) -> Result(#(a, Stack(a)), Nil) {
-  use #(item, queue) <- result.try(queue.pop_back(stack.queue))
-
-  Ok(#(item, Stack(queue:)))
+  list.pop(stack.list, fn(_) { True })
+  case stack.list {
+    [head, ..tail] -> Ok(#(head, Stack(list: tail)))
+    [] -> Error(Nil)
+  }
 }
 
 pub fn top(from stack: Stack(a)) -> Result(a, Nil) {
-  use #(item, _queue) <- result.try(queue.pop_back(stack.queue))
-
-  Ok(item)
+  list.first(stack.list)
 }
