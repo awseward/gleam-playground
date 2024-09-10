@@ -22,21 +22,15 @@ pub fn to_list(stack: Stack(a)) -> List(a) {
 }
 
 pub fn is_empty(stack: Stack(a)) -> Bool {
-  stack
-  |> to_list
-  |> list.is_empty
+  stack |> with_list(list.is_empty)
 }
 
-pub fn size(stack: Stack(a)) -> Int {
-  stack
-  |> to_list
-  |> list.length
+pub fn length(stack: Stack(a)) -> Int {
+  stack |> with_list(list.length)
 }
 
 pub fn push(onto stack: Stack(a), this item: a) -> Stack(a) {
-  stack
-  |> to_list
-  |> fn(l) { Stack([item, ..l]) }
+  from_list([item, ..to_list(stack)])
 }
 
 pub fn pop(from stack: Stack(a)) -> Result(#(a, Stack(a)), Nil) {
@@ -47,7 +41,9 @@ pub fn pop(from stack: Stack(a)) -> Result(#(a, Stack(a)), Nil) {
 }
 
 pub fn top(from stack: Stack(a)) -> Result(a, Nil) {
-  stack
-  |> to_list
-  |> list.first
+  stack |> with_list(list.first)
+}
+
+fn with_list(stack: Stack(a), f: fn(List(a)) -> b) -> b {
+  stack |> to_list |> f
 }
