@@ -10,7 +10,7 @@ pub opaque type Stack(element) {
 }
 
 pub fn new() -> Stack(a) {
-  Stack(list: [])
+  from_list([])
 }
 
 pub fn from_list(list: List(a)) -> Stack(a) {
@@ -35,7 +35,7 @@ pub fn push(onto stack: Stack(a), this item: a) -> Stack(a) {
 
 pub fn pop(from stack: Stack(a)) -> Result(#(a, Stack(a)), Nil) {
   case to_list(stack) {
-    [popped, ..list] -> Ok(#(popped, Stack(list:)))
+    [popped, ..list] -> Ok(#(popped, from_list(list)))
     [] -> Error(Nil)
   }
 }
