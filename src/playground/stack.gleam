@@ -22,25 +22,32 @@ pub fn to_list(stack: Stack(a)) -> List(a) {
 }
 
 pub fn is_empty(stack: Stack(a)) -> Bool {
-  list.is_empty(stack.list)
+  stack
+  |> to_list
+  |> list.is_empty
 }
 
 pub fn size(stack: Stack(a)) -> Int {
-  list.length(stack.list)
+  stack
+  |> to_list
+  |> list.length
 }
 
 pub fn push(onto stack: Stack(a), this item: a) -> Stack(a) {
-  Stack([item, ..stack.list])
+  stack
+  |> to_list
+  |> fn(l) { Stack([item, ..l]) }
 }
 
 pub fn pop(from stack: Stack(a)) -> Result(#(a, Stack(a)), Nil) {
-  list.pop(stack.list, fn(_) { True })
-  case stack.list {
-    [head, ..tail] -> Ok(#(head, Stack(list: tail)))
+  case to_list(stack) {
+    [popped, ..list] -> Ok(#(popped, Stack(list:)))
     [] -> Error(Nil)
   }
 }
 
 pub fn top(from stack: Stack(a)) -> Result(a, Nil) {
-  list.first(stack.list)
+  stack
+  |> to_list
+  |> list.first
 }
