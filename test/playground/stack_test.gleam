@@ -11,21 +11,10 @@ pub fn stack_push_test() {
   |> function.tap(to_list_should_equal(_, [3, 2, 1]))
 }
 
-pub fn stack_from_list_test() {
+pub fn from_list_to_list_round_trip_test() {
   [3, 2, 1]
   |> stack.from_list
   |> to_list_should_equal([3, 2, 1])
-}
-
-pub fn to_list_from_list_round_trip_test() {
-  stack.new()
-  |> stack.push(1)
-  |> stack.push(2)
-  |> stack.push(3)
-  |> stack.to_list
-  |> function.tap(should.equal(_, [3, 2, 1]))
-  |> stack.from_list
-  |> function.tap(to_list_should_equal(_, [3, 2, 1]))
 }
 
 pub fn top_test() {
