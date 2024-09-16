@@ -1,5 +1,4 @@
 import gleam/list
-import gleam/result
 
 /// A pretty basic stack, it almost feels trivial enough to just do most of
 /// this with basic list destructuring to not even need a module like this at
