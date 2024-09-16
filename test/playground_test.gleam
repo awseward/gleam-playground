@@ -1,9 +1,11 @@
+import birl/duration
 import gleam/function
 import gleam/io
 import gleam/list
 import gleam/result
 import gleeunit
 import gleeunit/should
+import playground
 
 pub fn main() {
   gleeunit.main()
@@ -70,4 +72,37 @@ pub fn chunk_test() {
     [B, B, C],
     [A, C, A, B],
   ]))
+}
+
+// ---
+
+pub fn single_leading_zero_test() {
+  [6, 0, 13]
+  |> list.map(playground.single_leading_zero)
+  |> should.equal(["06", "00", "13"])
+}
+
+pub fn format_elapsed_ok_test() {
+  1
+  |> duration.hours
+  |> duration.add(duration.minutes(4))
+  |> duration.add(duration.seconds(20))
+  |> duration.add(duration.milli_seconds(69))
+  |> playground.format_elapsed
+  |> should.be_ok
+  |> should.equal("01:04:20.069")
+}
+
+pub fn format_elapsed_invalid_too_large_test() {
+  24
+  |> duration.hours
+  |> playground.format_elapsed
+  |> should.be_error
+}
+
+pub fn format_elapsed_invalid_too_precise_test() {
+  10
+  |> duration.micro_seconds
+  |> playground.format_elapsed
+  |> should.be_error
 }
