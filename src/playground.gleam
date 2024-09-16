@@ -4,6 +4,7 @@ import gleam/io
 import gleam/iterator
 import gleam/list
 import gleam/order
+import gleam/option.{type Option, Some, None}
 import gleam/result
 import stdin.{stdin}
 
@@ -36,9 +37,9 @@ pub fn format_elapsed(d: Duration) -> Result(String, Nil) {
     })
   use <- guard(when: or(gte_24h, has_usec), return: Error(Nil))
 
-  let find_map_or = fn(xs: List(a), default: b, f: fn(a) -> Result(b, c)) -> b {
+  let find_map_or = fn(xs: List(a), default: b, f: fn(a) -> Option(b)) -> b {
     xs
-    |> list.find_map(f)
+    |> list.find_map(fn(a) { f(a) |> option.to_result(Nil) })
     |> result.replace_error(default)
     |> result.unwrap_both
   }
@@ -47,32 +48,32 @@ pub fn format_elapsed(d: Duration) -> Result(String, Nil) {
     parts
     |> find_map_or(0, fn(tup) {
       case tup.1 {
-        duration.Hour -> Ok(tup.0)
-        _ -> Error(Nil)
+        duration.Hour -> Some(tup.0)
+        _ -> None
       }
     })
   let minutes =
     parts
     |> find_map_or(0, fn(tup) {
       case tup.1 {
-        duration.Minute -> Ok(tup.0)
-        _ -> Error(Nil)
+        duration.Minute -> Some(tup.0)
+        _ -> None
       }
     })
   let seconds =
     parts
     |> find_map_or(0, fn(tup) {
       case tup.1 {
-        duration.Second -> Ok(tup.0)
-        _ -> Error(Nil)
+        duration.Second -> Some(tup.0)
+        _ -> None
       }
     })
   let milli_seconds =
     parts
     |> find_map_or(0, fn(tup) {
       case tup.1 {
-        duration.MilliSecond -> Ok(tup.0)
-        _ -> Error(Nil)
+        duration.MilliSecond -> Some(tup.0)
+        _ -> None
       }
     })
 
