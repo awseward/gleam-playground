@@ -3,8 +3,8 @@ import gleam/bool.{guard, or}
 import gleam/io
 import gleam/iterator
 import gleam/list
+import gleam/option.{type Option, None, Some}
 import gleam/order
-import gleam/option.{type Option, Some, None}
 import gleam/result
 import stdin.{stdin}
 
